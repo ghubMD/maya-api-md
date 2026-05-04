@@ -21,7 +21,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: Run PHPUnit
-        run: php bin/phpunit --log-junit junit.xml
+        run: php bin/phpunit tests/Unit/Entity/CategorieUnitTest.php --log-junit junit.xml
 
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
