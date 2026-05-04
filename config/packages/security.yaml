@@ -1,0 +1,73 @@
+security:
+    # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
+    password_hashers:  # Section qui définit comment les mots de passe sont hashés
+        App\Entity\User: 'auto'   # Pour l’entité User, Symfony choisit automatiquement le meilleur algorithme disponible (bcrypt, argon2, ...)
+
+    # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    providers:   #  Définit comment Symfony va charger un utilisateur (depuis la base de données, LDAP,...)
+        # used to reload user from session & other features (e.g. switch_user)
+        users:  # Nom interne du provider
+            entity:
+                class: App\Entity\User   #  Symfony va utiliser cette classe pour représenter un utilisateur
+                property: email   #  Champ utilisé pour identifier l’utilisateur 
+    firewalls:
+        dev:   #  Firewall utilisé uniquement en développement.
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false   # On désactive la sécurité pour ces routes (profiler, assets) pour ne pas bloquer les outils de debug
+        api:   # Firewall dédié à l'API REST
+            pattern: ^/api/   # S’applique à toutes les routes commençant par /api
+            stateless: true   # Indique que ce firewall ne gère pas les sessions (pas de cookies, pas de session server-side). Chaque requête doit contenir son authentification
+            provider: users   #  Indique quel provider utiliser pour charger l’utilisateur
+            jwt: ~   #  Active l’authentification via JWT (JSON Web Tokens). Symfony va lire le token JWT dans le header Authorization
+        main:   #  Firewall utilisé pour gérer la connexion (login)
+            security: false
+            json_login:   #  Active une authentification via JSON (utile pour les API)
+                check_path: auth    # Route utilisée pour envoyer les identifiants. C’est une route définie dans routes.yaml
+                username_path: email   #  Indique où trouver le "username" dans le JSON
+                password_path: password   #  Indique où trouver le mot de passe dans le JSON
+                success_handler: lexik_jwt_authentication.handler.authentication_success   #  Handler appelé si l’authentification réussit
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure   #  Handler appelé si l’authentification échoue
+            # https://symfony.com/doc/current/security/attack_mitigation.html#login-throttling
+            # après 5 essais infructueux, l’utilisateur doit attendre 5 minutes avant de pouvoir réessayer
+            login_throttling:   # limitation des tentatives de connexion
+                max_attempts: 5
+                interval: '5 minutes' # 5 minutes
+
+            # Activate different ways to authenticate:
+            # https://symfony.com/doc/current/security.html#the-firewall
+
+            # https://symfony.com/doc/current/security/impersonating_user.html
+            # switch_user: true
+
+    # Note: Only the *first* matching rule is applied
+    access_control:
+        # public
+        - { path: ^/$, roles: PUBLIC_ACCESS }  # Allows accessing the Swagger UI
+        - { path: ^/api/docs, roles: PUBLIC_ACCESS }  # Allows accessing the Swagger UI docs
+        - { path: ^/auth, roles: PUBLIC_ACCESS }
+
+        # lecture publique
+        - { path: ^/api/categories, methods: GET, roles: PUBLIC_ACCESS }
+        - { path: ^/api/produits, methods: GET, roles: PUBLIC_ACCESS }
+
+        # utilisateur connecté
+        - { path: ^/api/me, roles: ROLE_USER }
+        - { path: ^/api/paniers, roles: ROLE_CLIENT }
+        - { path: ^/api/item_paniers, roles: ROLE_CLIENT }
+
+        # laisser passer vers Voter
+        - { path: ^/api/users/\d+, roles: ROLE_USER }
+
+        # fallback API, tout le reste est réservé aux ADMIN
+        - { path: ^/api, roles: ROLE_ADMIN }
+
+when@test:
+    security:
+        password_hashers:
+            # Password hashers are resource-intensive by design to ensure security.
+            # In tests, it's safe to reduce their cost to improve performance.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon

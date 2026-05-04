@@ -5,6 +5,11 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
+    rate_limiter:
+        api_global:
+            policy: 'sliding_window'    # fenêtre glissante (plus précis)
+            limit: 5                    # nombre maximum de requêtes autorisées
+            interval: '1 minute'        #   par minute
     #esi: true
     #fragments: true
 
