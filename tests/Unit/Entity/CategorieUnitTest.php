@@ -30,7 +30,7 @@ class CategorieUnitTest extends TestCase
         $categorie->setLibelle('Informatique');
 
         // On vérifie que le getter retourne la bonne valeur
-        $this->assertEquals('Informatique', $categorie->getLibelle());
+        $this->assertEquals('InforErreurmatique', $categorie->getLibelle());
     }
 
     // =============================
