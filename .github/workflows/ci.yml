@@ -20,5 +20,13 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
-      - name: Run tests
-        run: php bin/phpunit tests/Unit/Entity/CategorieUnitTest.php
+      - name: Run PHPUnit
+        run: php bin/phpunit --log-junit junit.xml
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: PHPUnit Tests
+          path: junit.xml
+          reporter: java-junit
